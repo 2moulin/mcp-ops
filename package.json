@@ -1,0 +1,51 @@
+{
+  "name": "mcp-stripe-connect",
+  "version": "0.1.0",
+  "description": "MCP server that lets an AI agent inspect and diagnose a Stripe Connect platform: connected accounts, balances, transfers, payouts, webhooks. Read-only.",
+  "type": "module",
+  "bin": {
+    "mcp-stripe-connect": "dist/index.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsx src/index.ts",
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "stripe",
+    "stripe-connect",
+    "claude",
+    "ai-agents",
+    "payments",
+    "marketplace"
+  ],
+  "author": "David Demoulin (https://github.com/2moulin)",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/2moulin/mcp-stripe-connect"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "stripe": "^22.6.2",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "tsx": "^4.20.0",
+    "typescript": "^5.9.0",
+    "vitest": "^3.2.0"
+  }
+}
