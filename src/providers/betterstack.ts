@@ -3,12 +3,12 @@ import type { Guard, Provider, TimelineItem } from '../provider.js';
 import { ago, jsonClient, type Fetcher } from '../http.js';
 
 type Monitor = { id: string; attributes: { url: string; pronounceable_name?: string; status: string; last_checked_at?: string; monitor_type?: string; check_frequency?: number; paused?: boolean } };
-type Incident = { id: string; attributes: { name: string; cause?: string; started_at: string; resolved_at?: string | null; acknowledged_at?: string | null; url?: string; http_code?: number } };
+type Incident = { id: string; attributes: { name: string; cause?: string; started_at: string; resolved_at?: string | null; acknowledged_at?: string | null; url?: string; status?: string } };
 
 export function betterstackProvider(opts: { token: string; fetcher?: Fetcher }): Provider {
-  const get = jsonClient('https://uptime.betterstack.com/api/v2', { authorization: `Bearer ${opts.token}` }, opts.fetcher);
-  const monitors = async () => (await get<{ data: Monitor[] }>('/monitors', { per_page: 100 })).data ?? [];
-  const incidents = async (per_page: number) => (await get<{ data: Incident[] }>('/incidents', { per_page })).data ?? [];
+  const get = jsonClient('https://uptime.betterstack.com/api', { authorization: `Bearer ${opts.token}` }, opts.fetcher);
+  const monitors = async () => (await get<{ data: Monitor[] }>('/v2/monitors', { per_page: 100 })).data ?? [];
+  const incidents = async (per_page: number) => (await get<{ data: Incident[] }>('/v3/incidents', { per_page: Math.min(per_page, 50) })).data ?? [];
 
   return {
     name: 'uptime',
@@ -21,9 +21,9 @@ export function betterstackProvider(opts: { token: string; fetcher?: Fetcher }):
 
       server.registerTool('uptime_incidents', {
         title: 'Uptime incidents',
-        description: 'Recent incidents with cause, start, resolution and HTTP code.',
-        inputSchema: { limit: z.number().int().min(1).max(100).default(20) },
-      }, guard(async ({ limit }) => (await incidents(limit)).map((i) => `${i.id.padEnd(10)}  started ${ago(i.attributes.started_at).padStart(7)}  ${i.attributes.resolved_at ? `resolved ${ago(i.attributes.resolved_at)}` : 'ONGOING'}  ${i.attributes.name}  ${i.attributes.cause ?? ''}${i.attributes.http_code ? ` (HTTP ${i.attributes.http_code})` : ''}`).join('\n') || 'No incidents.'));
+        description: 'Recent incidents with cause, start and resolution.',
+        inputSchema: { limit: z.number().int().min(1).max(50).default(20) },
+      }, guard(async ({ limit }) => (await incidents(limit)).map((i) => `${i.id.padEnd(10)}  started ${ago(i.attributes.started_at).padStart(7)}  ${i.attributes.resolved_at ? `resolved ${ago(i.attributes.resolved_at)}` : 'ONGOING'}  ${i.attributes.name}  ${i.attributes.cause ?? ''}`).join('\n') || 'No incidents.'));
     },
 
     async status() {
@@ -33,7 +33,7 @@ export function betterstackProvider(opts: { token: string; fetcher?: Fetcher }):
     },
 
     async timeline(since, limit): Promise<TimelineItem[]> {
-      const list = await incidents(Math.min(limit, 100));
+      const list = await incidents(limit);
       const items: TimelineItem[] = [];
       for (const i of list) {
         if (new Date(i.attributes.started_at) >= since) items.push({ at: new Date(i.attributes.started_at), source: 'uptime', kind: 'incident started', text: `${i.attributes.name} ${i.attributes.cause ?? ''}` });

@@ -145,8 +145,8 @@ describe('twilio', () => {
 describe('betterstack', () => {
   it('reports down monitors and incident timeline', async () => {
     const fetcher = fakeFetch({
-      '/monitors': { data: [{ id: '1', attributes: { url: 'https://win.ai', pronounceable_name: 'WIN', status: 'down', last_checked_at: min(1), check_frequency: 60 } }, { id: '2', attributes: { url: 'https://api.win.ai', status: 'up', check_frequency: 60 } }] },
-      '/incidents': { data: [{ id: '9', attributes: { name: 'WIN down', cause: 'HTTP 502', started_at: min(15), resolved_at: null, http_code: 502 } }] },
+      '/v2/monitors': { data: [{ id: '1', attributes: { url: 'https://win.ai', pronounceable_name: 'WIN', status: 'down', last_checked_at: min(1), check_frequency: 60 } }, { id: '2', attributes: { url: 'https://api.win.ai', status: 'up', check_frequency: 60 } }] },
+      '/v3/incidents': { data: [{ id: '9', attributes: { name: 'WIN down', cause: 'HTTP 502', started_at: min(15), resolved_at: null, status: 'Started' } }] },
     });
     const client = await connect([betterstackProvider({ token: 't', fetcher })]);
     expect(textOf(await client.callTool({ name: 'ops_status', arguments: {} }))).toContain('2 monitor(s), 1 DOWN (WIN)');

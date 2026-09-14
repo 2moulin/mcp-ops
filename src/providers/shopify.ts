@@ -33,9 +33,10 @@ export function shopifyProvider(opts: { shop: string; accessToken: string; fetch
         if (/^\d{8,}$/.test(order)) o = (await get<{ order: typeof o }>(`/orders/${order}.json`)).order;
         else {
           const name = order.startsWith('#') ? order : `#${order}`;
-          const res = await get<{ orders: (typeof o)[] }>('/orders.json', { status: 'any', name, limit: 1 });
-          if (!res.orders?.length) return `No order ${name}.`;
-          o = res.orders[0];
+          const res = await get<{ orders: (typeof o)[] }>('/orders.json', { status: 'any', limit: 250, fields: 'id,name' });
+          const hit = res.orders?.find((x) => x.name === name);
+          if (!hit) return `No order ${name} among the last 250 orders. Pass the numeric id instead.`;
+          o = (await get<{ order: typeof o }>(`/orders/${hit.id}.json`)).order;
         }
         return [
           line(o), '',

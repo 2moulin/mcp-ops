@@ -18,8 +18,9 @@ export function twilioProvider(opts: { accountSid: string; authToken: string; fe
         description: 'Recent SMS/MMS with status (delivered, undelivered, failed, queued), direction, error code and cost. Phone numbers masked to the last 4 digits; bodies are not returned.',
         inputSchema: { status: z.string().optional(), limit: z.number().int().min(1).max(100).default(25) },
       }, guard(async ({ status, limit }) => {
-        const res = await get<{ messages: Message[] }>('/Messages.json', { PageSize: limit, Status: status });
-        return (res.messages ?? []).map(line).join('\n') || 'No messages.';
+        const res = await get<{ messages: Message[] }>('/Messages.json', { PageSize: status ? 100 : limit });
+        const ms = (res.messages ?? []).filter((m) => !status || m.status === status).slice(0, limit);
+        return ms.map(line).join('\n') || 'No messages.';
       }));
     },
 
@@ -31,7 +32,7 @@ export function twilioProvider(opts: { accountSid: string; authToken: string; fe
     },
 
     async timeline(since, limit): Promise<TimelineItem[]> {
-      const res = await get<{ messages: Message[] }>('/Messages.json', { PageSize: Math.min(limit, 100), DateSent: since.toISOString().slice(0, 10) });
+      const res = await get<{ messages: Message[] }>('/Messages.json', { PageSize: Math.min(limit, 100), DateSent: '>=' + since.toISOString().slice(0, 10) });
       return (res.messages ?? []).filter((m) => new Date(m.date_sent ?? m.date_created) >= since).map((m) => ({ at: new Date(m.date_sent ?? m.date_created), source: 'twilio', kind: `sms ${m.status}`, text: `${maskPhone(m.from)} -> ${maskPhone(m.to)}${m.error_code ? ` ERROR ${m.error_code}` : ''}` }));
     },
   };

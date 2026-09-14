@@ -61,7 +61,7 @@ export function postgresProvider(db: DbReader, label = 'postgres'): Provider {
         inputSchema: { schema: z.string().default('public') },
       }, guard(async ({ schema }) => {
         const { rows } = await db.query(
-          `SELECT c.relname AS table, c.reltuples::bigint AS est_rows, pg_size_pretty(pg_total_relation_size(c.oid)) AS size
+          `SELECT c.relname AS table, GREATEST(c.reltuples, 0)::bigint AS est_rows, pg_size_pretty(pg_total_relation_size(c.oid)) AS size
              FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
             WHERE n.nspname = $1 AND c.relkind IN ('r','p') ORDER BY pg_total_relation_size(c.oid) DESC`, [schema]);
         return `${rows.length} table(s) in ${schema}\n\n${table(rows, 200)}`;
