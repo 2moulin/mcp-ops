@@ -44,6 +44,7 @@ if (providers.length === 0) {
     '  RESEND_API_KEY',
     '  SENTRY_TOKEN + SENTRY_ORG + SENTRY_PROJECT [+ SENTRY_URL]',
     '  GITHUB_TOKEN + GITHUB_REPO   (owner/name)',
+    ...(skipped.length ? ['', `Skipped: ${skipped.join(', ')}`] : []),
   ].join('\n'));
   process.exit(1);
 }
