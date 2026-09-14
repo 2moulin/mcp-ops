@@ -22,7 +22,6 @@ const env = process.env;
 const providers: Provider[] = [];
 const skipped: string[] = [];
 
-/** Each provider loads only when its variables are present; a bad configuration skips that provider, never the server. */
 function add(name: string, needs: string[], make: () => Provider): void {
   const missing = needs.filter((k) => !env[k]);
   if (missing.length === needs.length) return; // not configured at all

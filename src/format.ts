@@ -1,11 +1,7 @@
-// Small formatting helpers shared by every tool. Everything the agent sees goes through here,
-// so masking and money formatting stay consistent.
-
 const ZERO_DECIMAL = new Set([
   'bif', 'clp', 'djf', 'gnf', 'jpy', 'kmf', 'krw', 'mga', 'pyg', 'rwf', 'ugx', 'vnd', 'vuv', 'xaf', 'xof', 'xpf',
 ]);
 
-/** Stripe amounts are in the smallest unit. Turn 1234 + "cad" into "12.34 CAD". */
 export function money(amount: number | null | undefined, currency: string | null | undefined): string {
   if (amount == null || !currency) return 'n/a';
   const cur = currency.toLowerCase();
@@ -13,7 +9,6 @@ export function money(amount: number | null | undefined, currency: string | null
   return `${major.toFixed(ZERO_DECIMAL.has(cur) ? 0 : 2)} ${cur.toUpperCase()}`;
 }
 
-/** "david.demoulin@example.com" -> "d***@example.com". Enough to recognise, not enough to leak. */
 export function maskEmail(email: string | null | undefined): string {
   if (!email) return 'n/a';
   const [local, domain] = email.split('@');
@@ -21,7 +16,6 @@ export function maskEmail(email: string | null | undefined): string {
   return `${local.slice(0, 1)}***@${domain}`;
 }
 
-/** "+1 418 555 1234" -> "+1 ***1234". */
 export function maskPhone(phone: string | null | undefined): string {
   if (!phone) return 'n/a';
   const digits = phone.replace(/\D/g, '');
@@ -38,7 +32,6 @@ export function yesNo(v: boolean | null | undefined): string {
   return v ? 'yes' : 'no';
 }
 
-/** Render a list of key/value rows as aligned text. */
 export function rows(pairs: Array<[string, string | number | boolean | null | undefined]>): string {
   const width = Math.max(...pairs.map(([k]) => k.length));
   return pairs.map(([k, v]) => `${k.padEnd(width)}  ${v ?? 'n/a'}`).join('\n');

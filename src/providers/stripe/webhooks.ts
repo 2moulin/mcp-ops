@@ -16,7 +16,6 @@ export async function listWebhookEndpoints(stripe: StripeReader): Promise<string
 export async function listEvents(stripe: StripeReader, opts: { type?: string; limit: number; onlyUndelivered?: boolean }): Promise<string> {
   const params: Stripe.EventListParams = { limit: opts.limit };
   if (opts.type) {
-    // Allow a prefix like "payment_intent." as well as an exact type.
     if (opts.type.endsWith('.') || opts.type.endsWith('*')) params.type = opts.type.replace(/\*$/, '') + '*';
     else params.type = opts.type;
   }

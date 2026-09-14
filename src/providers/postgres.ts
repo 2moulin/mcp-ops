@@ -3,7 +3,6 @@ import pg from 'pg';
 import type { Guard, Provider, TimelineItem } from '../provider.js';
 import { clip } from '../http.js';
 
-/** The one method the tools need. Tests hand in a fake; production wraps a pg Pool in a read-only transaction. */
 export interface DbReader {
   query(sql: string, params?: unknown[]): Promise<{ rows: Record<string, unknown>[]; rowCount: number | null }>;
 }
@@ -11,7 +10,6 @@ export interface DbReader {
 const READ_ONLY_START = /^\s*(select|with|explain|show|table|values)\b/i;
 const FORBIDDEN = /\b(insert|update|delete|drop|alter|create|truncate|grant|revoke|copy|vacuum|call|do|lock|refresh|reindex|cluster|set\s+role|reset|discard)\b/i;
 
-/** Reject anything that is not a plain read before it even reaches the database. */
 export function assertReadOnly(sql: string): void {
   const s = sql.replace(/--.*$/gm, '').replace(/\/\*[\s\S]*?\*\//g, '').trim();
   if (!s) throw new Error('Empty statement.');
@@ -21,7 +19,6 @@ export function assertReadOnly(sql: string): void {
 }
 
 export function createPgReader(connectionString: string, statementTimeoutMs = 15000, opts: { insecureTls?: boolean } = {}): DbReader {
-  // TLS is verified by default. Only a local database skips TLS; PG_TLS_NO_VERIFY=1 disables verification for self-signed servers.
   const local = /@(localhost|127\.0\.0\.1)[:/]/.test(connectionString);
   const pool = new pg.Pool({ connectionString, max: 2, ssl: local ? undefined : { rejectUnauthorized: !opts.insecureTls } });
   return {

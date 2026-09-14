@@ -2,11 +2,6 @@ import type Stripe from 'stripe';
 import type { StripeReader } from './client.js';
 import { money, renderFindings, type Finding } from '../../format.js';
 
-/**
- * Why did (or will) this transfer fail? The checks below are the ones that bite real Connect
- * platforms: wrong settlement currency, amount above the charge's net, a destination that cannot
- * receive payouts, an unfunded platform balance.
- */
 export async function diagnoseTransfer(stripe: StripeReader, idOrChargeId: string): Promise<string> {
   const f: Finding[] = [];
   let transfer: Stripe.Transfer | null = null;
@@ -25,7 +20,7 @@ export async function diagnoseTransfer(stripe: StripeReader, idOrChargeId: strin
     return 'Give a transfer id (tr_...) or a charge id (ch_... / py_...).';
   }
 
-  // Make sure the charge carries its balance transaction, which is where the settlement currency lives.
+  // The settlement currency lives on the balance transaction, not on the charge.
   if (charge && (!charge.balance_transaction || typeof charge.balance_transaction === 'string')) {
     charge = await stripe.charges.retrieve(charge.id, { expand: ['balance_transaction'] });
   }
@@ -49,7 +44,6 @@ export async function diagnoseTransfer(stripe: StripeReader, idOrChargeId: strin
     f.push({ level: transfer.reversed ? 'warn' : 'ok', text: `${money(transfer.amount_reversed, transfer.currency)} of it has been reversed${transfer.reversed ? ' (fully reversed)' : ''}.` });
   }
 
-  // Funding source checks.
   if (charge && bt) {
     if (transfer.currency !== bt.currency) {
       f.push({ level: 'error', text: `Transfer is in ${transfer.currency.toUpperCase()} but its source charge settled in ${bt.currency.toUpperCase()}. A transfer funded from a charge must use the charge's settlement currency (balance_transaction.currency).` });
@@ -80,7 +74,6 @@ export async function diagnoseTransfer(stripe: StripeReader, idOrChargeId: strin
     }
   }
 
-  // Destination checks.
   if (dest) {
     try {
       const a = await stripe.accounts.retrieve(dest);
@@ -99,7 +92,6 @@ export async function diagnoseTransfer(stripe: StripeReader, idOrChargeId: strin
   return renderFindings(`Transfer diagnosis for ${transfer.id}`, f);
 }
 
-/** Why can't this connected account charge or get paid? */
 export async function diagnoseAccount(stripe: StripeReader, accountId: string): Promise<string> {
   const a = await stripe.accounts.retrieve(accountId);
   const f: Finding[] = [];

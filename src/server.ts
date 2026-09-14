@@ -2,8 +2,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import type { Guard, Provider, TimelineItem, ToolResult } from './provider.js';
 
-/** Every tool goes through this so a provider error becomes a readable line instead of a crash. */
-/** Hard cap on any tool output, so one chatty API cannot flood the agent's context. */
+// One chatty API must not flood the agent's context.
 const MAX_OUTPUT = 24000;
 
 const guard: Guard = (fn) => async (args) => {

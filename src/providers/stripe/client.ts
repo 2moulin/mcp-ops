@@ -1,9 +1,6 @@
 import Stripe from 'stripe';
 
-/**
- * The slice of the Stripe client the tools use. Kept as an interface so tests can hand in a fake
- * and so the surface of what this server can touch is explicit: everything here is a read.
- */
+// The slice of Stripe the tools touch. All reads.
 export interface StripeReader {
   accounts: {
     list(params: Stripe.AccountListParams): Promise<Stripe.ApiList<Stripe.Account>>;
@@ -38,7 +35,6 @@ export function createStripe(secretKey: string): StripeReader {
   }) as unknown as StripeReader;
 }
 
-/** Live keys start with sk_live_ / rk_live_. Test keys with sk_test_ / rk_test_. */
 export function keyMode(secretKey: string): 'live' | 'test' | 'unknown' {
   if (/^(sk|rk)_live_/.test(secretKey)) return 'live';
   if (/^(sk|rk)_test_/.test(secretKey)) return 'test';

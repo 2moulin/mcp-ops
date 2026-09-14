@@ -1,11 +1,10 @@
-/** A fetch that speaks JSON, carries auth headers, times out, and turns HTTP failures into readable errors. */
 export type Fetcher = (url: string, init?: RequestInit) => Promise<Response>;
 
 export const HTTP_TIMEOUT_MS = 20000;
 
 export class HttpError extends Error {
   constructor(public status: number, body: string, url: string) {
-    // Never echo the query string: some APIs put tokens there, and the agent sees this message.
+    // Some APIs put the token in the query string; the agent sees this message.
     super(`HTTP ${status} from ${url.replace(/\?.*$/, '')}: ${body.replace(/\s+/g, ' ').slice(0, 300)}`);
   }
 }

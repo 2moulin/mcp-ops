@@ -10,7 +10,6 @@ import { resendProvider } from '../src/providers/resend.js';
 import { sentryProvider } from '../src/providers/sentry.js';
 import { githubProvider } from '../src/providers/github.js';
 
-/** A fetch that answers from a route table: first matching substring wins. */
 function fakeFetch(routes: Record<string, unknown>): Fetcher & { urls: string[] } {
   const urls: string[] = [];
   const f = (async (url: string) => {

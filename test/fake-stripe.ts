@@ -1,10 +1,7 @@
 import type Stripe from 'stripe';
 import type { StripeReader } from '../src/providers/stripe/client.js';
 
-/**
- * A tiny in-memory Stripe. Each test seeds the objects it needs; the reader looks them up the way
- * the real client would, including the `expand` behaviour the diagnostics rely on.
- */
+// In-memory Stripe, including the `expand` behaviour the diagnostics rely on.
 export type Seed = {
   accounts?: Partial<Stripe.Account>[];
   charges?: Partial<Stripe.Charge>[];
