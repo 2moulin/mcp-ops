@@ -1,7 +1,7 @@
 {
   "name": "mcp-ops",
-  "version": "0.2.0",
-  "description": "One read-only MCP server that gives your AI agent eyes on your whole production stack: Stripe Connect, Postgres, Vercel, Resend, Sentry, GitHub. Status in one call, a cross-service timeline, and diagnostics that explain why things fail.",
+  "version": "0.3.0",
+  "description": "One read-only MCP server that gives your AI agent eyes on your whole production stack: Stripe Connect, Postgres, Neon, Vercel, Netlify, Render, Cloudflare, Resend, Postmark, Twilio, Sentry, Better Stack, Shopify, GitHub. Status in one call, a cross-service timeline, and diagnostics that explain why things fail.",
   "type": "module",
   "bin": {
     "mcp-ops": "dist/index.js"
@@ -27,13 +27,21 @@
     "ai-agents",
     "devops",
     "observability",
+    "read-only",
     "stripe",
     "stripe-connect",
     "postgres",
     "neon",
     "vercel",
+    "netlify",
+    "render",
+    "cloudflare",
     "resend",
+    "postmark",
+    "twilio",
     "sentry",
+    "betterstack",
+    "shopify",
     "github"
   ],
   "author": "David Demoulin (https://github.com/2moulin)",

@@ -41,7 +41,7 @@ export function vercelProvider(opts: { token: string; teamId?: string; project?:
 
       server.registerTool('vercel_deployment_logs', {
         title: 'Build logs of a deployment',
-        description: 'Build and runtime events of one deployment (the last lines, clipped). Use it on an ERROR deployment to see why it failed.',
+        description: 'Build and runtime events of one deployment (the last lines, clipped). Use it on an ERROR deployment to see why it failed. Note: a build log contains whatever the build printed.',
         inputSchema: { deployment_id: z.string(), limit: z.number().int().min(10).max(500).default(150) },
       }, guard(async ({ deployment_id, limit }) => {
         const events = await get<Array<{ type: string; created: number; text?: string; payload?: { text?: string } }>>(`/v3/deployments/${deployment_id}/events`, { ...scope(), limit, direction: 'backward' });

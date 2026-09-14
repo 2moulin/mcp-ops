@@ -20,8 +20,10 @@ export function assertReadOnly(sql: string): void {
   if (FORBIDDEN.test(s)) throw new Error('Statement contains a write or DDL keyword; this server is read-only.');
 }
 
-export function createPgReader(connectionString: string, statementTimeoutMs = 15000): DbReader {
-  const pool = new pg.Pool({ connectionString, max: 2, ssl: /localhost|127\.0\.0\.1/.test(connectionString) ? undefined : { rejectUnauthorized: false } });
+export function createPgReader(connectionString: string, statementTimeoutMs = 15000, opts: { insecureTls?: boolean } = {}): DbReader {
+  // TLS is verified by default. Only a local database skips TLS; PG_TLS_NO_VERIFY=1 disables verification for self-signed servers.
+  const local = /@(localhost|127\.0\.0\.1)[:/]/.test(connectionString);
+  const pool = new pg.Pool({ connectionString, max: 2, ssl: local ? undefined : { rejectUnauthorized: !opts.insecureTls } });
   return {
     async query(sql, params = []) {
       const client = await pool.connect();
@@ -80,7 +82,7 @@ export function postgresProvider(db: DbReader, label = 'postgres'): Provider {
         const idx = await db.query(`SELECT indexname, indexdef FROM pg_indexes WHERE schemaname = $1 AND tablename = $2`, [schema, t]);
         const fks = await db.query(
           `SELECT conname, pg_get_constraintdef(oid) AS def FROM pg_constraint
-            WHERE conrelid = ($1 || '.' || quote_ident($2))::regclass AND contype IN ('f','p','u')`, [schema, t]);
+            WHERE conrelid = (quote_ident($1) || '.' || quote_ident($2))::regclass AND contype IN ('f','p','u')`, [schema, t]);
         return [`${schema}.${t}`, '', table(cols.rows, 200), '', 'indexes:', ...(idx.rows.map((r) => `  ${r.indexdef}`)), '', 'constraints:', ...(fks.rows.map((r) => `  ${r.conname}: ${r.def}`))].join('\n');
       }));
 

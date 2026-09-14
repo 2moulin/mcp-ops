@@ -21,6 +21,14 @@ export function maskEmail(email: string | null | undefined): string {
   return `${local.slice(0, 1)}***@${domain}`;
 }
 
+/** "+1 418 555 1234" -> "+1 ***1234". */
+export function maskPhone(phone: string | null | undefined): string {
+  if (!phone) return 'n/a';
+  const digits = phone.replace(/\D/g, '');
+  if (digits.length < 4) return '***';
+  return `${phone.startsWith('+') ? '+' : ''}***${digits.slice(-4)}`;
+}
+
 export function isoDate(unixSeconds: number | null | undefined): string {
   if (!unixSeconds) return 'n/a';
   return new Date(unixSeconds * 1000).toISOString();
