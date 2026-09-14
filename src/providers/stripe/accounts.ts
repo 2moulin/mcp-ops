@@ -1,6 +1,6 @@
 import type Stripe from 'stripe';
-import type { StripeReader } from '../stripe.js';
-import { isoDate, maskEmail, rows, yesNo } from '../format.js';
+import type { StripeReader } from './client.js';
+import { isoDate, maskEmail, rows, yesNo } from '../../format.js';
 
 export function summarizeAccount(a: Stripe.Account): string {
   const req = a.requirements;

@@ -1,6 +1,6 @@
 import type Stripe from 'stripe';
-import type { StripeReader } from '../stripe.js';
-import { isoDate, money } from '../format.js';
+import type { StripeReader } from './client.js';
+import { isoDate, money } from '../../format.js';
 
 function acct(accountId?: string): Stripe.RequestOptions | undefined {
   return accountId ? { stripeAccount: accountId } : undefined;

@@ -1,6 +1,6 @@
 import type Stripe from 'stripe';
-import type { StripeReader } from '../stripe.js';
-import { isoDate } from '../format.js';
+import type { StripeReader } from './client.js';
+import { isoDate } from '../../format.js';
 
 export async function listWebhookEndpoints(stripe: StripeReader): Promise<string> {
   const res = await stripe.webhookEndpoints.list({ limit: 100 });

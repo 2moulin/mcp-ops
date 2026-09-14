@@ -1,110 +1,54 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
-import type { StripeReader } from './stripe.js';
-import { getAccount, listAccounts } from './tools/accounts.js';
-import { getBalance, listCharges, listPayouts, listTransfers } from './tools/money.js';
-import { getEvent, listEvents, listWebhookEndpoints } from './tools/webhooks.js';
-import { diagnoseAccount, diagnoseTransfer } from './tools/diagnose.js';
+import type { Guard, Provider, TimelineItem, ToolResult } from './provider.js';
 
-const accountId = z.string().regex(/^acct_[A-Za-z0-9]+$/, 'a connected account id, like acct_1ABC...');
-const limit = z.number().int().min(1).max(100).default(20);
+/** Every tool goes through this so a provider error becomes a readable line instead of a crash. */
+const guard: Guard = (fn) => async (args) => {
+  try {
+    return { content: [{ type: 'text', text: await fn(args) }] } satisfies ToolResult;
+  } catch (err) {
+    const e = err as { type?: string; code?: string; message?: string };
+    const detail = [e.type, e.code].filter(Boolean).join(' ');
+    return { content: [{ type: 'text', text: `Error${detail ? ` (${detail})` : ''}: ${e.message ?? String(err)}` }], isError: true };
+  }
+};
 
-type ToolResult = { content: Array<{ type: 'text'; text: string }>; isError?: boolean };
+export function createServer(providers: Provider[]): McpServer {
+  const server = new McpServer({ name: 'mcp-ops', version: '0.2.0' });
+  const names = providers.map((p) => p.name);
 
-function text(s: string): ToolResult {
-  return { content: [{ type: 'text', text: s }] };
-}
+  for (const p of providers) p.register(server, guard);
 
-/** Every tool goes through this so a Stripe error becomes a readable line instead of a crash. */
-function guard<A>(fn: (args: A) => Promise<string>): (args: A) => Promise<ToolResult> {
-  return async (args) => {
-    try {
-      return text(await fn(args));
-    } catch (err) {
-      const e = err as { type?: string; code?: string; message?: string };
-      const detail = [e.type, e.code].filter(Boolean).join(' ');
-      return { content: [{ type: 'text', text: `Stripe error${detail ? ` (${detail})` : ''}: ${e.message ?? String(err)}` }], isError: true };
-    }
-  };
-}
-
-export function createServer(stripe: StripeReader, mode: 'live' | 'test' | 'unknown'): McpServer {
-  const server = new McpServer({ name: 'mcp-stripe-connect', version: '0.1.0' });
-  const modeNote = mode === 'live' ? ' Live mode: real money, real customers; everything here is read-only.' : '';
-
-  server.registerTool('stripe_list_accounts', {
-    title: 'List connected accounts',
-    description: 'List the connected accounts of this Stripe Connect platform with their status (charges, payouts, requirements due).' + modeNote,
-    inputSchema: { limit },
-  }, guard(({ limit }) => listAccounts(stripe, limit)));
-
-  server.registerTool('stripe_get_account', {
-    title: 'Get a connected account',
-    description: 'Full status of one connected account: capabilities, requirements, external accounts (last4 only), dashboard type.',
-    inputSchema: { account_id: accountId },
-  }, guard(({ account_id }) => getAccount(stripe, account_id)));
-
-  server.registerTool('stripe_diagnose_account', {
-    title: 'Diagnose a connected account',
-    description: 'Explain why a connected account cannot charge or get paid out: disabled reasons, past-due requirements, capabilities, missing bank account, TOS.',
-    inputSchema: { account_id: accountId },
-  }, guard(({ account_id }) => diagnoseAccount(stripe, account_id)));
-
-  server.registerTool('stripe_balance', {
-    title: 'Balance',
-    description: 'Available and pending balance per currency, for the platform (no account_id) or for one connected account.',
-    inputSchema: { account_id: accountId.optional() },
-  }, guard(({ account_id }) => getBalance(stripe, account_id)));
-
-  server.registerTool('stripe_list_transfers', {
-    title: 'List transfers',
-    description: 'Transfers from the platform to connected accounts: amount, currency, destination, funding charge, reversals.',
-    inputSchema: {
-      destination: accountId.optional().describe('Only transfers to this connected account'),
-      since_days: z.number().int().min(1).max(365).optional().describe('Only transfers created in the last N days'),
-      limit,
-    },
-  }, guard(({ destination, since_days, limit }) => listTransfers(stripe, { destination, sinceDays: since_days, limit })));
-
-  server.registerTool('stripe_diagnose_transfer', {
-    title: 'Diagnose a transfer',
-    description: 'Given a transfer id (tr_...) or a charge id (ch_...), check what makes Connect transfers fail: settlement currency of the source charge vs the transfer currency, amount above the charge net, platform balance too low, destination with payouts disabled, refunds and disputes.',
-    inputSchema: { id: z.string().describe('tr_... or ch_...') },
-  }, guard(({ id }) => diagnoseTransfer(stripe, id)));
-
-  server.registerTool('stripe_list_charges', {
-    title: 'List charges',
-    description: 'Recent charges on the platform, or on one connected account (direct charges) when account_id is given. Shows destination, application fee and attached transfer.',
-    inputSchema: { account_id: accountId.optional(), limit },
-  }, guard(({ account_id, limit }) => listCharges(stripe, { accountId: account_id, limit })));
-
-  server.registerTool('stripe_list_payouts', {
-    title: 'List payouts of a connected account',
-    description: 'Payouts from a connected account to its bank, with status, arrival date and failure reason.',
-    inputSchema: { account_id: accountId, limit },
-  }, guard(({ account_id, limit }) => listPayouts(stripe, { accountId: account_id, limit })));
-
-  server.registerTool('stripe_list_webhook_endpoints', {
-    title: 'List webhook endpoints',
-    description: 'Webhook endpoints of the platform with their status, API version and enabled events.',
+  server.registerTool('ops_status', {
+    title: 'Status of the whole stack',
+    description: `One line per connected service (${names.join(', ')}): balances, blocked accounts, failing webhooks, last deploy, open errors, bounced emails, database size and connections. Start here.`,
     inputSchema: {},
-  }, guard(() => listWebhookEndpoints(stripe)));
+  }, guard(async () => {
+    const lines = await Promise.all(providers.map(async (p) => {
+      try { return await p.status(); } catch (err) { return `${p.name}: unavailable (${(err as Error).message.slice(0, 160)})`; }
+    }));
+    return lines.join('\n');
+  }));
 
-  server.registerTool('stripe_list_events', {
-    title: 'List events',
-    description: 'Recent Stripe events. Filter by type ("payment_intent.succeeded") or by prefix ("payment_intent."). only_undelivered=true lists events whose webhook delivery is still failing.',
+  server.registerTool('ops_timeline', {
+    title: 'What happened, across every service',
+    description: 'One chronological list mixing deploys, commits, CI runs, Stripe events, Sentry issues and emails for the last N minutes. The fastest way to answer "what changed before things broke".',
     inputSchema: {
-      type: z.string().optional(),
-      only_undelivered: z.boolean().optional(),
-      limit,
+      since_minutes: z.number().int().min(1).max(60 * 24 * 14).default(120),
+      sources: z.array(z.string()).optional().describe(`Restrict to some of: ${names.join(', ')}`),
+      limit: z.number().int().min(5).max(300).default(80),
     },
-  }, guard(({ type, only_undelivered, limit }) => listEvents(stripe, { type, onlyUndelivered: only_undelivered, limit })));
-
-  server.registerTool('stripe_get_event', {
-    title: 'Get an event',
-    description: 'One event with its payload (clipped at 6000 characters), pending webhook count and the request that caused it.',
-    inputSchema: { event_id: z.string().regex(/^evt_[A-Za-z0-9]+$/) },
-  }, guard(({ event_id }) => getEvent(stripe, event_id)));
+  }, guard(async ({ since_minutes, sources, limit }) => {
+    const since = new Date(Date.now() - since_minutes * 60000);
+    const picked = providers.filter((p) => p.timeline && (!sources || sources.includes(p.name)));
+    const results = await Promise.all(picked.map(async (p) => {
+      try { return await p.timeline!(since, limit); } catch (err) { return [{ at: new Date(), source: p.name, kind: 'unavailable', text: (err as Error).message.slice(0, 160) }] as TimelineItem[]; }
+    }));
+    const items = results.flat().sort((a, b) => a.at.getTime() - b.at.getTime()).slice(-limit);
+    if (items.length === 0) return `Nothing from ${picked.map((p) => p.name).join(', ')} in the last ${since_minutes} minutes.`;
+    const w = Math.max(...items.map((i) => i.source.length));
+    return `${items.length} event(s) since ${since.toISOString()}\n\n` + items.map((i) => `${i.at.toISOString().slice(0, 19).replace('T', ' ')}  ${i.source.padEnd(w)}  ${i.kind.padEnd(28)}  ${i.text}`).join('\n');
+  }));
 
   return server;
 }

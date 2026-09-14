@@ -1,10 +1,10 @@
 {
-  "name": "mcp-stripe-connect",
-  "version": "0.1.0",
-  "description": "MCP server that lets an AI agent inspect and diagnose a Stripe Connect platform: connected accounts, balances, transfers, payouts, webhooks. Read-only.",
+  "name": "mcp-ops",
+  "version": "0.2.0",
+  "description": "One read-only MCP server that gives your AI agent eyes on your whole production stack: Stripe Connect, Postgres, Vercel, Resend, Sentry, GitHub. Status in one call, a cross-service timeline, and diagnostics that explain why things fail.",
   "type": "module",
   "bin": {
-    "mcp-stripe-connect": "dist/index.js"
+    "mcp-ops": "dist/index.js"
   },
   "files": [
     "dist",
@@ -21,24 +21,34 @@
   "keywords": [
     "mcp",
     "model-context-protocol",
+    "claude",
+    "claude-code",
+    "cursor",
+    "ai-agents",
+    "devops",
+    "observability",
     "stripe",
     "stripe-connect",
-    "claude",
-    "ai-agents",
-    "payments",
-    "marketplace"
+    "postgres",
+    "neon",
+    "vercel",
+    "resend",
+    "sentry",
+    "github"
   ],
   "author": "David Demoulin (https://github.com/2moulin)",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/2moulin/mcp-stripe-connect"
+    "url": "https://github.com/2moulin/mcp-ops"
   },
   "engines": {
     "node": ">=20"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.30.0",
+    "@types/pg": "^8.23.1",
+    "pg": "^8.23.0",
     "stripe": "^22.6.2",
     "zod": "^4.6.5"
   },

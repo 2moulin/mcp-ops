@@ -34,7 +34,7 @@ export interface StripeReader {
 
 export function createStripe(secretKey: string): StripeReader {
   return new Stripe(secretKey, {
-    appInfo: { name: 'mcp-stripe-connect', url: 'https://github.com/2moulin/mcp-stripe-connect' },
+    appInfo: { name: 'mcp-ops', url: 'https://github.com/2moulin/mcp-ops' },
   }) as unknown as StripeReader;
 }
 

@@ -1,6 +1,6 @@
 import type Stripe from 'stripe';
-import type { StripeReader } from '../stripe.js';
-import { money, renderFindings, type Finding } from '../format.js';
+import type { StripeReader } from './client.js';
+import { money, renderFindings, type Finding } from '../../format.js';
 
 /**
  * Why did (or will) this transfer fail? The checks below are the ones that bite real Connect

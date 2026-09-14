@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { diagnoseAccount, diagnoseTransfer } from '../src/tools/diagnose.js';
+import { diagnoseAccount, diagnoseTransfer } from '../src/providers/stripe/diagnose.js';
 import { fakeStripe } from './fake-stripe.js';
 
 const healthyAccount = {

@@ -1,5 +1,5 @@
 import type Stripe from 'stripe';
-import type { StripeReader } from '../src/stripe.js';
+import type { StripeReader } from '../src/providers/stripe/client.js';
 
 /**
  * A tiny in-memory Stripe. Each test seeds the objects it needs; the reader looks them up the way
@@ -79,6 +79,8 @@ export function fakeStripe(seed: Seed): StripeReader & { calls: string[] } {
       async list(p) {
         calls.push('events.list');
         let data = (seed.events ?? []) as Stripe.Event[];
+        const gte = typeof p.created === 'object' && p.created && 'gte' in p.created ? p.created.gte : undefined;
+        if (gte) data = data.filter((e) => e.created >= gte);
         if (typeof p.type === 'string') {
           const t = p.type;
           data = t.endsWith('*') ? data.filter((e) => e.type.startsWith(t.slice(0, -1))) : data.filter((e) => e.type === t);
