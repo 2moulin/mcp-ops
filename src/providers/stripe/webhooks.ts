@@ -1,6 +1,6 @@
 import type Stripe from 'stripe';
 import type { StripeReader } from './client.js';
-import { isoDate } from '../../format.js';
+import { isoDate, redactPii } from '../../format.js';
 
 export async function listWebhookEndpoints(stripe: StripeReader): Promise<string> {
   const res = await stripe.webhookEndpoints.list({ limit: 100 });
@@ -33,7 +33,7 @@ export async function listEvents(stripe: StripeReader, opts: { type?: string; li
 
 export async function getEvent(stripe: StripeReader, eventId: string): Promise<string> {
   const e = await stripe.events.retrieve(eventId);
-  const payload = JSON.stringify(e.data.object, null, 2);
+  const payload = JSON.stringify(redactPii(e.data.object), null, 2);
   const clipped = payload.length > 6000 ? payload.slice(0, 6000) + '\n... (clipped)' : payload;
   return [
     `${e.id}  ${e.type}  ${isoDate(e.created)}`,

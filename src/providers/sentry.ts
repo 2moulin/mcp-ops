@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import type { Guard, Provider, TimelineItem } from '../provider.js';
 import { ago, clip, jsonClient, type Fetcher } from '../http.js';
+import { maskEmail } from '../format.js';
 
 type Issue = { id: string; shortId: string; title: string; culprit?: string; level?: string; count: string; userCount: number; firstSeen: string; lastSeen: string; status: string; permalink?: string };
 
@@ -37,7 +38,11 @@ export function sentryProvider(opts: { token: string; org: string; project: stri
         ]);
         const frames = (ev.entries ?? []).flatMap((e) => e.data?.values ?? []).flatMap((v) => (v.stacktrace?.frames ?? []).filter((f) => f.inApp).slice(-8).map((f) => `  ${f.filename}:${f.lineNo} in ${f.function ?? '?'}`));
         const exc = (ev.entries ?? []).flatMap((e) => e.data?.values ?? []).map((v) => `${v.type}: ${v.value}`);
-        const tags = (ev.tags ?? []).filter((t) => ['release', 'environment', 'url', 'user', 'browser', 'transaction', 'handled'].includes(t.key)).map((t) => `${t.key}=${t.value}`);
+        const tags = (ev.tags ?? []).filter((t) => ['release', 'environment', 'url', 'user', 'browser', 'transaction', 'handled'].includes(t.key)).map((t) => {
+          // A `user` tag is often an email; a `url` can carry PII or tokens in its query string.
+          const value = t.key === 'user' && t.value.includes('@') ? maskEmail(t.value) : t.key === 'url' ? t.value.replace(/\?.*$/, '') : t.value;
+          return `${t.key}=${value}`;
+        });
         return clip([
           `${issue.shortId}  ${issue.status}  ${issue.level ?? ''}  x${issue.count}  ${issue.userCount} users  first ${ago(issue.firstSeen)}  last ${ago(issue.lastSeen)}`,
           issue.title, issue.permalink ?? '', '', ...exc, ...(frames.length ? ['in-app frames:', ...frames] : []), '', tags.join('  '),

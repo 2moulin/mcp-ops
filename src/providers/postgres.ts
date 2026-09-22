@@ -20,7 +20,7 @@ export function assertReadOnly(sql: string): void {
 
 export function createPgReader(connectionString: string, statementTimeoutMs = 15000, opts: { insecureTls?: boolean } = {}): DbReader {
   const local = /@(localhost|127\.0\.0\.1)[:/]/.test(connectionString);
-  const pool = new pg.Pool({ connectionString, max: 2, ssl: local ? undefined : { rejectUnauthorized: !opts.insecureTls } });
+  const pool = new pg.Pool({ connectionString, max: 2, connectionTimeoutMillis: 10000, ssl: local ? undefined : { rejectUnauthorized: !opts.insecureTls } });
   return {
     async query(sql, params = []) {
       const client = await pool.connect();

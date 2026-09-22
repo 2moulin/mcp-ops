@@ -1,6 +1,6 @@
 {
   "name": "mcp-ops",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "One read-only MCP server that gives your AI agent eyes on your whole production stack: Stripe Connect, Postgres, Neon, Vercel, Netlify, Render, Cloudflare, Resend, Postmark, Twilio, Sentry, Better Stack, Shopify, GitHub. Status in one call, a cross-service timeline, and diagnostics that explain why things fail.",
   "type": "module",
   "bin": {

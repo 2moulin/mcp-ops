@@ -4,6 +4,14 @@
 
 **Give your AI agent read-only eyes on your whole production stack.**
 
+[![license: MIT](https://img.shields.io/badge/license-MIT-yellow.svg)](LICENSE)
+&nbsp;![node](https://img.shields.io/badge/node-%E2%89%A520-3C873A?logo=node.js&logoColor=white)
+&nbsp;![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white)
+&nbsp;![Model Context Protocol](https://img.shields.io/badge/MCP-server-6E56CF)
+&nbsp;![read-only by construction](https://img.shields.io/badge/read--only-by%20construction-brightgreen)
+&nbsp;![services](https://img.shields.io/badge/services-14-0A7EA4)
+&nbsp;![tests](https://img.shields.io/badge/tests-38%20passing-3C873A)
+
 Stripe · Postgres · Neon · Vercel · Netlify · Render · Cloudflare · Resend · Postmark · Twilio · Sentry · Better Stack · Shopify · GitHub
 
 One MCP server. Every service behind two tools that see across all of them. Nothing it can touch is ever written.
